@@ -449,7 +449,7 @@ function startGUI () {
         <h3>Special Effects (Double-Click)</h3>
         <p>Double-click anywhere on the simulation to create special effects:</p>
         <p>• <strong>Normal</strong> - Creates an explosion effect with fluid bursting outward in all directions.</p>
-        <p>• <strong>Vortex</strong> - Creates a soft spiral pattern with fluid gently swirling inward.</p>
+        <p>• <strong>Vortex</strong> - Creates a giant multi-colored vortex that adapts to the currently selected theme. The vortex forms a dense spiral with intense color transitions that follow your theme's palette, creating a spectacular and dynamic visual effect.</p>
         
         <h3>Splat Radius</h3>
         <p>Controls the size of fluid splats when interacting with the simulation.</p>
@@ -496,6 +496,7 @@ function startGUI () {
 
         <h2>Tips</h2>
         <p>• Click and drag on the simulation to create fluid movements</p>
+        <p>• Double-click to create special effects based on your selected interaction mode</p>
         <p>• Press SPACE to create random splats</p>
         <p>• Press P to pause/resume the simulation</p>
         <p>• Higher quality settings may slow down performance on older devices</p>
@@ -2508,26 +2509,73 @@ function createExplosionEffect(x, y, color) {
 }
 
 function createVortexEffect(x, y, color) {
-    // Create a gentler swirling vortex pattern with reduced intensity
-    const numSplats = 12; // Fewer splats
-    const maxRadius = 0.03; // Smaller radius
-    const force = 400; // Significantly reduced force
+    // Create a giant multi-colored vortex following the current theme
+    const numSplats = 40; // Significantly more splats for a giant effect
+    const maxRadius = 0.15; // Much larger radius for giant vortex
+    const force = 800; // Stronger force for a more dynamic effect
     
-    // Reduce color intensity to prevent white-out
-    const mutedColor = {
-        r: color.r * 0.3, // Dramatically reduced color intensity
-        g: color.g * 0.3, 
-        b: color.b * 0.3
-    };
+    // Store original splat radius to restore it later
+    const originalSplatRadius = config.SPLAT_RADIUS;
+    // Increase splat radius for better visibility and size
+    config.SPLAT_RADIUS = originalSplatRadius * 3.0;
     
     for (let i = 0; i < numSplats; i++) {
         const t = i / (numSplats - 1); // 0 to 1
-        const radius = t * maxRadius;
-        const angle = t * Math.PI * 5; // Slightly fewer rotations for spiral
+        const radius = Math.pow(t, 0.8) * maxRadius; // Adjusted curve for better spiral
+        const angle = t * Math.PI * 12; // More rotations for a denser spiral
         
-        // Tangential force for rotation - much gentler
-        const dx = -Math.sin(angle) * force * (1 - t) * 0.5; // Greatly reduced strength
-        const dy = Math.cos(angle) * force * (1 - t) * 0.5;
+        // Generate a color that follows the theme but varies throughout the vortex
+        const vortexColor = {
+            r: color.r,
+            g: color.g,
+            b: color.b
+        };
+        
+        // Adjust colors based on position in spiral to create multi-colored effect
+        // while following the theme's color palette
+        switch (config.COLOR_PRESET) {
+            case 'Neon':
+                // Neon theme with rainbow-like variations
+                vortexColor.r = color.r * (0.7 + 0.6 * Math.sin(t * Math.PI * 4));
+                vortexColor.g = color.g * (0.7 + 0.6 * Math.sin(t * Math.PI * 4 + Math.PI * 0.6));
+                vortexColor.b = color.b * (0.7 + 0.6 * Math.sin(t * Math.PI * 4 + Math.PI * 1.2));
+                break;
+            case 'Fire':
+                // Fire theme with red to yellow gradient
+                vortexColor.r = color.r * (0.7 + 0.3 * Math.sin(t * Math.PI));
+                vortexColor.g = color.g * (0.4 + 0.6 * t);
+                vortexColor.b = color.b * (0.2 + 0.4 * Math.pow(t, 2));
+                break;
+            case 'Ocean':
+                // Ocean theme with blue to teal to white gradient
+                vortexColor.r = color.r * (0.2 + 0.8 * Math.pow(t, 1.5));
+                vortexColor.g = color.g * (0.4 + 0.6 * Math.sin(t * Math.PI * 2));
+                vortexColor.b = color.b * (0.6 + 0.4 * Math.sin(t * Math.PI));
+                break;
+            case 'Galaxy':
+                // Galaxy theme with purple, blue, and pink
+                vortexColor.r = color.r * (0.4 + 0.6 * Math.sin(t * Math.PI * 3));
+                vortexColor.g = color.g * (0.2 + 0.4 * Math.pow(t, 1.2));
+                vortexColor.b = color.b * (0.6 + 0.4 * Math.sin(t * Math.PI * 2 + Math.PI * 0.5));
+                break;
+            default:
+                // Default theme with nice gradient
+                vortexColor.r = color.r * (0.5 + 0.5 * Math.sin(t * Math.PI * 3));
+                vortexColor.g = color.g * (0.5 + 0.5 * Math.sin(t * Math.PI * 3 + Math.PI * 0.66));
+                vortexColor.b = color.b * (0.5 + 0.5 * Math.sin(t * Math.PI * 3 + Math.PI * 1.33));
+                break;
+        }
+        
+        // Apply brightness enhancement but avoid overexposure
+        const intensityFactor = 1.5 + Math.sin(t * Math.PI * 2) * 0.5;
+        vortexColor.r *= intensityFactor;
+        vortexColor.g *= intensityFactor;
+        vortexColor.b *= intensityFactor;
+        
+        // Tangential force for rotation - stronger at the beginning, weaker at the end
+        const forceFactor = 1.0 - Math.pow(t, 0.7);
+        const dx = -Math.sin(angle) * force * forceFactor;
+        const dy = Math.cos(angle) * force * forceFactor;
         
         // Spiral pattern
         const splatX = x + Math.cos(angle) * radius;
@@ -2537,8 +2585,46 @@ function createVortexEffect(x, y, color) {
         const clampedX = Math.max(0.001, Math.min(0.999, splatX));
         const clampedY = Math.max(0.001, Math.min(0.999, splatY));
         
-        splat(clampedX, clampedY, dx, dy, mutedColor);
+        // Add variation in splat size throughout the vortex
+        config.SPLAT_RADIUS = originalSplatRadius * (3.0 - 1.5 * t);
+        
+        splat(clampedX, clampedY, dx, dy, vortexColor);
     }
+    
+    // Add some additional splats in the center for a more dramatic effect
+    const centerSplats = 8;
+    for (let i = 0; i < centerSplats; i++) {
+        const angle = (i / centerSplats) * Math.PI * 2;
+        const smallRadius = 0.01;
+        
+        // Strong outward force from center
+        const centerForce = force * 1.5;
+        const dx = Math.cos(angle) * centerForce;
+        const dy = Math.sin(angle) * centerForce;
+        
+        // Center points
+        const splatX = x + Math.cos(angle) * smallRadius;
+        const splatY = y + Math.sin(angle) * smallRadius;
+        
+        // Ensure the splat is within bounds
+        const clampedX = Math.max(0.001, Math.min(0.999, splatX));
+        const clampedY = Math.max(0.001, Math.min(0.999, splatY));
+        
+        // Larger splat radius for center
+        config.SPLAT_RADIUS = originalSplatRadius * 4.0;
+        
+        // Brighter center color
+        const centerColor = {
+            r: color.r * 2.0,
+            g: color.g * 2.0,
+            b: color.b * 2.0
+        };
+        
+        splat(clampedX, clampedY, dx, dy, centerColor);
+    }
+    
+    // Restore original splat radius
+    config.SPLAT_RADIUS = originalSplatRadius;
 }
 
 function updatePointerDownData (pointer, id, posX, posY) {

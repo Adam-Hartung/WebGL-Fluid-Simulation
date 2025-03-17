@@ -82,7 +82,14 @@ let config = {
     SUNRAYS: true,
     SUNRAYS_RESOLUTION: 196,
     SUNRAYS_WEIGHT: 1.0,
-    CONTINUOUS_SPLATS: false
+    CONTINUOUS_SPLATS: false,
+    PARTICLES: true,
+    PARTICLE_COUNT: 200,
+    PARTICLE_SIZE: 3.0,
+    PARTICLE_TRAIL_LENGTH: 0.8,
+    PARTICLE_COLOR_INTENSITY: 2.5,
+    TURBULENCE: false,
+    TURBULENCE_STRENGTH: 50
 };
 
 // Store default configuration values for reset functionality
@@ -112,7 +119,14 @@ const defaultConfig = {
     SUNRAYS: true,
     SUNRAYS_RESOLUTION: 196,
     SUNRAYS_WEIGHT: 1.0,
-    CONTINUOUS_SPLATS: false
+    CONTINUOUS_SPLATS: false,
+    PARTICLES: true,
+    PARTICLE_COUNT: 200,
+    PARTICLE_SIZE: 3.0,
+    PARTICLE_TRAIL_LENGTH: 0.8,
+    PARTICLE_COLOR_INTENSITY: 2.5,
+    TURBULENCE: false,
+    TURBULENCE_STRENGTH: 50
 };
 
 function pointerPrototype () {
@@ -538,7 +552,16 @@ function startGUI () {
     }).name('Quality').onFinishChange(initFramebuffers);
     
     displayFolder.add(config, 'SHADING').name('Shading').onFinishChange(updateKeywords);
-    displayFolder.add(config, 'COLORFUL').name('Colorful Mode');
+    const colorfulToggle = displayFolder.add(config, 'COLORFUL').name('Colorful Mode');
+    
+    // Style the colorful mode toggle
+    if (colorfulToggle.domElement) {
+        const colorfulLabel = colorfulToggle.domElement.querySelector('.property-name');
+        if (colorfulLabel) {
+            colorfulLabel.style.fontWeight = 'bold';
+            colorfulLabel.style.color = '#9C27B0';
+        }
+    }
     
     // Add color preset selection
     displayFolder.add(config, 'COLOR_PRESET', {
@@ -570,7 +593,16 @@ function startGUI () {
     simulationFolder.add(config, 'SPLAT_FORCE', 1000, 10000).name('Splat Force').step(100);
     
     // Interactive controls - top level for easy access
-    gui.add(config, 'PAUSED').name('PAUSE Simulation').listen();
+    const pauseButton = gui.add(config, 'PAUSED').name('PAUSE Simulation').listen();
+    
+    // Style the pause button
+    if (pauseButton.domElement) {
+        const pauseLabel = pauseButton.domElement.querySelector('.property-name');
+        if (pauseLabel) {
+            pauseLabel.style.fontWeight = 'bold';
+            pauseLabel.style.color = '#2FA1D6';
+        }
+    }
     
     // Add Random Splats button with enhanced styling
     const randomSplatButton = gui.add({ fun: () => {
@@ -578,7 +610,16 @@ function startGUI () {
     } }, 'fun').name('Random Splats!');
     
     // Add Continuous Splats toggle with better name
-    gui.add(config, 'CONTINUOUS_SPLATS').name('Auto-Generate Splats').listen();
+    const continuousSplatsButton = gui.add(config, 'CONTINUOUS_SPLATS').name('Auto-Generate Splats').listen();
+    
+    // Style the continuous splats button
+    if (continuousSplatsButton.domElement) {
+        const continuousSplatsLabel = continuousSplatsButton.domElement.querySelector('.property-name');
+        if (continuousSplatsLabel) {
+            continuousSplatsLabel.style.fontWeight = 'bold';
+            continuousSplatsLabel.style.color = '#4CAF50';
+        }
+    }
     
     // Add Randomize Settings button
     let randomizeButton = gui.add({ randomizeSettings: () => {
@@ -604,7 +645,12 @@ function startGUI () {
             SHADING: [0, 1],
             COLORFUL: [0, 1],
             BLOOM: [0, 1],
-            SUNRAYS: [0, 1]
+            SUNRAYS: [0, 1],
+            PARTICLES: [0, 1],
+            PARTICLE_COUNT: [500, 2000],
+            PARTICLE_SIZE: [0.5, 2.0],
+            TURBULENCE: [0, 1],
+            TURBULENCE_STRENGTH: [0, 100]
         };
         
         // Random color scheme selection
@@ -721,10 +767,19 @@ function startGUI () {
     }
 
     // Add interaction mode selector to the new interaction folder
-    interactionFolder.add(config, 'INTERACTION_MODE', {
+    const interactionModeControl = interactionFolder.add(config, 'INTERACTION_MODE', {
         'Normal': 'Normal',
         'Vortex': 'Vortex'
     }).name('Interaction Mode').onChange(updateKeywords);
+    
+    // Style the interaction mode control
+    if (interactionModeControl.domElement) {
+        const interactionModeLabel = interactionModeControl.domElement.querySelector('.property-name');
+        if (interactionModeLabel) {
+            interactionModeLabel.style.fontWeight = 'bold';
+            interactionModeLabel.style.color = '#9C27B0';
+        }
+    }
     
     // Move some existing controls to the interaction folder
     interactionFolder.add(config, 'SPLAT_RADIUS', 0.01, 1.0).name('Splat Radius');
@@ -736,13 +791,68 @@ function startGUI () {
     
     // Effects subfolders
     let bloomFolder = effectsFolder.addFolder('Bloom Effect');
-    bloomFolder.add(config, 'BLOOM').name('Enable Bloom').onFinishChange(updateKeywords);
+    const bloomToggle = bloomFolder.add(config, 'BLOOM').name('Enable Bloom').onFinishChange(updateKeywords);
     bloomFolder.add(config, 'BLOOM_INTENSITY', 0.1, 2.0).name('Intensity');
     bloomFolder.add(config, 'BLOOM_THRESHOLD', 0.0, 1.0).name('Threshold');
+    
+    // Style the bloom toggle
+    if (bloomToggle.domElement) {
+        const bloomToggleLabel = bloomToggle.domElement.querySelector('.property-name');
+        if (bloomToggleLabel) {
+            bloomToggleLabel.style.fontWeight = 'bold';
+            bloomToggleLabel.style.color = '#2FA1D6';
+        }
+    }
 
     let sunraysFolder = effectsFolder.addFolder('Sunrays Effect');
-    sunraysFolder.add(config, 'SUNRAYS').name('Enable Sunrays').onFinishChange(updateKeywords);
+    const sunraysToggle = sunraysFolder.add(config, 'SUNRAYS').name('Enable Sunrays').onFinishChange(updateKeywords);
     sunraysFolder.add(config, 'SUNRAYS_WEIGHT', 0.3, 1.0).name('Weight');
+    
+    // Style the sunrays toggle
+    if (sunraysToggle.domElement) {
+        const sunraysToggleLabel = sunraysToggle.domElement.querySelector('.property-name');
+        if (sunraysToggleLabel) {
+            sunraysToggleLabel.style.fontWeight = 'bold';
+            sunraysToggleLabel.style.color = '#2FA1D6';
+        }
+    }
+    
+    // Add Particles Effect folder
+    let particlesFolder = effectsFolder.addFolder('Particle Overlay');
+    const particlesToggle = particlesFolder.add(config, 'PARTICLES').name('Enable Particles');
+    particlesFolder.add(config, 'PARTICLE_COUNT', 100, 2000).step(100).name('Particle Count');
+    particlesFolder.add(config, 'PARTICLE_SIZE', 0.5, 3.0).step(0.1).name('Particle Size');
+    particlesFolder.add(config, 'PARTICLE_TRAIL_LENGTH', 0, 1.0).step(0.1).name('Trail Length');
+    particlesFolder.add(config, 'PARTICLE_COLOR_INTENSITY', 0.5, 3.0).step(0.1).name('Color Intensity');
+    
+    // Add a performance note to the particle folder
+    const particlePerformanceNote = document.createElement('div');
+    particlePerformanceNote.className = 'performance-note';
+    particlePerformanceNote.innerHTML = '<span style="color:#FF5252;font-size:11px;">Note: High particle counts may affect performance</span>';
+    particlesFolder.domElement.appendChild(particlePerformanceNote);
+    
+    // Style the particles toggle
+    if (particlesToggle.domElement) {
+        const particlesToggleLabel = particlesToggle.domElement.querySelector('.property-name');
+        if (particlesToggleLabel) {
+            particlesToggleLabel.style.fontWeight = 'bold';
+            particlesToggleLabel.style.color = '#2FA1D6';
+        }
+    }
+    
+    // Add Turbulence Effect folder
+    let turbulenceFolder = effectsFolder.addFolder('Noise/Turbulence');
+    const turbulenceToggle = turbulenceFolder.add(config, 'TURBULENCE').name('Enable Turbulence');
+    turbulenceFolder.add(config, 'TURBULENCE_STRENGTH', 10, 100).step(5).name('Turbulence Strength');
+    
+    // Style the turbulence toggle
+    if (turbulenceToggle.domElement) {
+        const turbulenceToggleLabel = turbulenceToggle.domElement.querySelector('.property-name');
+        if (turbulenceToggleLabel) {
+            turbulenceToggleLabel.style.fontWeight = 'bold';
+            turbulenceToggleLabel.style.color = '#2FA1D6';
+        }
+    }
 
     // Open the main folders by default for better discoverability
     displayFolder.open();
@@ -1871,8 +1981,15 @@ function update () {
         }
     }
     
+    // Apply turbulence if enabled
+    applyTurbulence(dt);
+    
     if (!config.PAUSED)
         step(dt);
+    
+    // Update particles
+    updateParticles(dt);
+    
     render(null);
     requestAnimationFrame(update);
 }
@@ -1999,6 +2116,15 @@ function render (target) {
 
     drawColor(target, normalizeColor(config.BACK_COLOR));
     drawDisplay(target);
+    
+    try {
+        // Draw particles on top if enabled
+        if (config.PARTICLES) {
+            drawParticles();
+        }
+    } catch (e) {
+        console.error('Error in particle rendering:', e);
+    }
 }
 
 function drawColor (target, color) {
@@ -2771,4 +2897,377 @@ function hashCode (s) {
     }
     return hash;
 };
+
+// Add after core declarations like pointers, dye, velocity, etc. but before initialization functions
+
+// Particle system
+let particles = [];
+let particleTexCoordBuffer;
+
+// Noise/turbulence variables
+let turbulenceTimer = 0;
+let turbulenceNextTime = 0;
+
+class Particle {
+    constructor() {
+        this.reset();
+    }
+    
+    reset() {
+        this.x = Math.random();
+        this.y = Math.random();
+        this.prevX = this.x;
+        this.prevY = this.y;
+        this.color = generateColor();
+        
+        // Apply color multipliers based on the selected color scheme
+        try {
+            switch (config.COLOR_PRESET) {
+                case 'Neon':
+                    this.color.r *= 4.0 + Math.random() * 3.0; // Enhanced brightness
+                    this.color.g *= 4.0 + Math.random() * 3.0;
+                    this.color.b *= 4.0 + Math.random() * 3.0;
+                    break;
+                case 'Fire':
+                    this.color.r *= 5.0 + Math.random() * 3.0; // More intense reds
+                    this.color.g *= 3.5 + Math.random() * 2.0;
+                    this.color.b *= 1.5 + Math.random() * 1.5;
+                    break;
+                case 'Ocean':
+                    this.color.r *= 1.5 + Math.random() * 1.5;
+                    this.color.g *= 3.0 + Math.random() * 2.0;
+                    this.color.b *= 5.0 + Math.random() * 3.0; // Enhanced blues
+                    break;
+                case 'Galaxy':
+                    this.color.r *= 3.0 + Math.random() * 2.0;
+                    this.color.g *= 1.5 + Math.random() * 1.5;
+                    this.color.b *= 5.0 + Math.random() * 3.0;
+                    break;
+                case 'Sunset':
+                    this.color.r *= 5.0 + Math.random() * 2.0;
+                    this.color.g *= 3.0 + Math.random() * 2.0;
+                    this.color.b *= 4.0 + Math.random() * 2.0;
+                    break;
+                default:
+                    this.color.r *= 3.0 + Math.random();
+                    this.color.g *= 3.0 + Math.random();
+                    this.color.b *= 3.0 + Math.random();
+                    break;
+            }
+            
+            // Apply additional color intensity from config
+            this.color.r *= config.PARTICLE_COLOR_INTENSITY;
+            this.color.g *= config.PARTICLE_COLOR_INTENSITY;
+            this.color.b *= config.PARTICLE_COLOR_INTENSITY;
+            
+            // Add randomized color variation
+            if (Math.random() < 0.3) {
+                // For 30% of particles, add a color boost to one channel
+                const boostedChannel = Math.floor(Math.random() * 3);
+                if (boostedChannel === 0) this.color.r *= 1.5;
+                else if (boostedChannel === 1) this.color.g *= 1.5;
+                else this.color.b *= 1.5;
+            }
+        } catch (e) {
+            // Fallback to default colors if there's an error
+            this.color = { r: 0.8, g: 0.7, b: 1.0 };
+            console.error('Error in particle color setup:', e);
+        }
+        
+        // Varied lifetime for more natural flow patterns
+        this.life = Math.random() * 5 + 3; // 3-8 seconds lifetime
+        this.age = 0;
+        
+        // Vary size more dramatically for better depth perception
+        const sizeVariation = 0.6 + Math.random() * 0.8; // 0.6-1.4 size multiplier
+        this.size = config.PARTICLE_SIZE * sizeVariation;
+    }
+    
+    update(dt) {
+        // Update age
+        this.age += dt;
+        if (this.age >= this.life) {
+            this.reset();
+            return;
+        }
+        
+        // Save previous position
+        this.prevX = this.x;
+        this.prevY = this.y;
+    }
+}
+
+// Initialize particle system
+function initParticles() {
+    particles = [];
+    for (let i = 0; i < config.PARTICLE_COUNT; i++) {
+        particles.push(new Particle());
+    }
+}
+
+// Update particles based on fluid velocity
+function updateParticles(dt) {
+    if (!config.PARTICLES || config.PAUSED) return;
+    
+    try {
+        // Performance optimization: Only update particles every other frame
+        // Use a static variable to track frames
+        updateParticles.frameCounter = (updateParticles.frameCounter || 0) + 1;
+        if (updateParticles.frameCounter % 2 !== 0) return;
+        
+        // Lazy initialization
+        if (particles.length === 0 || particles.length !== config.PARTICLE_COUNT) {
+            initParticles();
+        }
+        
+        // Update all particles for more consistent motion
+        particles.forEach(p => {
+            p.update(dt);
+            
+            // Get normalized coordinates in [0,1] range
+            let u = p.x;
+            let v = p.y;
+            
+            // Enhanced motion patterns that stand out from fluid simulation
+            // Using stronger, more dramatic motion formulas
+            
+            // Much larger patterns that move oppositely to fluid
+            const timeScale = performance.now() * 0.0005;
+            
+            // Create more dramatic sine wave patterns
+            const patternScale = 4.0;
+            const fx = Math.sin(v * patternScale + timeScale) * 0.7;
+            const fy = Math.cos(u * patternScale + timeScale * 1.3) * 0.7;
+            
+            // Add counter-rotating vortex motion
+            const cx = u - 0.5;  // Center coordinates
+            const cy = v - 0.5;
+            const dist = Math.sqrt(cx * cx + cy * cy);
+            const angle = Math.atan2(cy, cx);
+            
+            // Vortex motion increases near the center
+            const vortexStrength = Math.max(0, 0.5 - dist) * 1.0;
+            const vx1 = Math.cos(angle + Math.PI/2) * vortexStrength;
+            const vy1 = Math.sin(angle + Math.PI/2) * vortexStrength;
+            
+            // Combine patterns
+            let vx = fx + vx1 * 2.0;
+            let vy = fy + vy1 * 2.0;
+            
+            // Make particles respond strongly to user interaction
+            for (let j = 0; j < pointers.length; j++) {
+                const pointer = pointers[j];
+                if (!pointer.down) continue;
+                
+                const dx = u - pointer.texcoordX;
+                const dy = v - pointer.texcoordY;
+                const distSq = dx * dx + dy * dy;
+                
+                // Much larger area of influence
+                if (distSq < 0.04) { // 0.2 squared
+                    // Create dramatic swirling motion around pointer
+                    const angle = Math.atan2(dy, dx);
+                    // Stronger swirl that pushes particles away from pointer
+                    const swirl = 1.0 * (0.6 - Math.sqrt(distSq)) / 0.6;
+                    vx += Math.cos(angle + Math.PI/2) * swirl * 2.0; 
+                    vy += Math.sin(angle + Math.PI/2) * swirl * 2.0;
+                    break; 
+                }
+            }
+            
+            // Apply velocity with higher scale for more dramatic movement
+            const velocityScale = 0.2 * (config.SPLAT_FORCE / 5000);
+            p.x += vx * dt * velocityScale;
+            p.y += vy * dt * velocityScale;
+            
+            // Wrap around the boundaries
+            if (p.x < 0) p.x = 1 + p.x;
+            if (p.x > 1) p.x = p.x - 1;
+            if (p.y < 0) p.y = 1 + p.y;
+            if (p.y > 1) p.y = p.y - 1;
+        });
+    } catch (e) {
+        console.error('Error in updateParticles:', e);
+    }
+}
+
+// Apply random turbulence to fluid
+function applyTurbulence(dt) {
+    if (!config.TURBULENCE || config.PAUSED) return;
+    
+    // Update turbulence timer
+    turbulenceTimer += dt;
+    
+    // Initialize next turbulence time if not set
+    if (turbulenceNextTime <= 0) {
+        turbulenceNextTime = 0.5 + Math.random() * 1.5; // 0.5-2.0 seconds between turbulence
+    }
+    
+    // Apply turbulence at random intervals
+    if (turbulenceTimer >= turbulenceNextTime) {
+        turbulenceTimer = 0;
+        turbulenceNextTime = 0.5 + Math.random() * 1.5;
+        
+        // Apply random turbulence by creating several small splats
+        const numSplats = 3 + Math.floor(Math.random() * 5); // 3-7 splats
+        const turbulenceStrength = config.TURBULENCE_STRENGTH / 100.0; // Convert to 0-1 range
+        
+        for (let i = 0; i < numSplats; i++) {
+            // Random position
+            const x = 0.1 + Math.random() * 0.8; // Keep away from edges (0.1-0.9)
+            const y = 0.1 + Math.random() * 0.8;
+            
+            // Random direction
+            const angle = Math.random() * Math.PI * 2;
+            const force = 0.01 + Math.random() * 0.03 * turbulenceStrength;
+            const dx = Math.cos(angle) * force * config.SPLAT_FORCE;
+            const dy = Math.sin(angle) * force * config.SPLAT_FORCE;
+            
+            // Random color for the turbulence
+            const color = generateColor();
+            color.r *= 1.5;
+            color.g *= 1.5;
+            color.b *= 1.5;
+            
+            // Apply a small splat for turbulence
+            const originalRadius = config.SPLAT_RADIUS;
+            config.SPLAT_RADIUS = 0.005 + Math.random() * 0.01 * turbulenceStrength;
+            splat(x, y, dx, dy, color);
+            config.SPLAT_RADIUS = originalRadius;
+        }
+    }
+}
+
+// Render particles using WebGL
+function drawParticles() {
+    if (!config.PARTICLES || particles.length === 0) return;
+    
+    try {
+        // Use a separate canvas for 2D drawing to avoid interfering with WebGL context
+        let particleCanvas = document.createElement('canvas');
+        particleCanvas.width = canvas.width;
+        particleCanvas.height = canvas.height;
+        const ctx = particleCanvas.getContext('2d');
+        
+        // Clear the canvas
+        ctx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+        
+        // Set composite operation for highest visibility
+        ctx.globalCompositeOperation = 'lighter';
+        
+        // Performance optimization: Skip drawing particles that are too small or transparent
+        const visibleParticles = particles.filter(p => {
+            const opacity = 1.0 - (p.age / p.life);
+            return opacity > 0.05 && p.size > 0.1; 
+        });
+        
+        // COMPLETELY UNMISSABLE PARTICLES
+        // Add a pulsing effect for even more visibility
+        const pulseIntensity = Math.sin(performance.now() * 0.003) * 0.1 + 0.9; // 0.8-1.0 range pulsing
+        
+        // Draw each particle with extreme contrast
+        visibleParticles.forEach(p => {
+            // Calculate opacity based on age
+            const opacity = 1.0 - (p.age / p.life);
+            
+            // Convert normalized coordinates to canvas coordinates
+            const x = p.x * canvas.width;
+            const y = (1 - p.y) * canvas.height; // Flip Y coordinate
+            
+            // SUPER ENHANCED PARTICLE RENDERING
+            
+            // Draw a gigantic outer halo
+            const outerGlowSize = p.size * 8.0 * pulseIntensity;
+            const outerGlow = ctx.createRadialGradient(x, y, 0, x, y, outerGlowSize);
+            
+            // Complementary colors for contrast
+            const invertedR = 1.0 - p.color.r;
+            const invertedG = 1.0 - p.color.g;
+            const invertedB = 1.0 - p.color.b;
+            
+            // Pulsing brightness for added visibility
+            const pulsedBrightness = 2.0 + pulseIntensity;
+            
+            // Extremely bright center that fades to complementary color
+            outerGlow.addColorStop(0, `rgba(${Math.min(255, Math.floor(p.color.r * 255 * pulsedBrightness))}, ${Math.min(255, Math.floor(p.color.g * 255 * pulsedBrightness))}, ${Math.min(255, Math.floor(p.color.b * 255 * pulsedBrightness))}, ${opacity * 0.4})`);
+            outerGlow.addColorStop(0.3, `rgba(${Math.floor(p.color.r * 255 * 1.5)}, ${Math.floor(p.color.g * 255 * 1.5)}, ${Math.floor(p.color.b * 255 * 1.5)}, ${opacity * 0.3})`);
+            outerGlow.addColorStop(0.7, `rgba(${Math.floor(invertedR * 255 * 0.8)}, ${Math.floor(invertedG * 255 * 0.8)}, ${Math.floor(invertedB * 255 * 0.8)}, ${opacity * 0.2})`);
+            outerGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            
+            ctx.beginPath();
+            ctx.fillStyle = outerGlow;
+            ctx.arc(x, y, outerGlowSize, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw very bright core with much larger size
+            const coreSize = p.size * 3.5 * pulseIntensity;
+            const coreGlow = ctx.createRadialGradient(x, y, 0, x, y, coreSize);
+            
+            // Pure white center for maximum visibility
+            coreGlow.addColorStop(0, 'rgba(255, 255, 255, ' + Math.min(1.0, opacity * 1.8) + ')');
+            coreGlow.addColorStop(0.2, `rgba(${Math.min(255, Math.floor(p.color.r * 255 * 3))}, ${Math.min(255, Math.floor(p.color.g * 255 * 3))}, ${Math.min(255, Math.floor(p.color.b * 255 * 3))}, ${opacity * 1.5})`);
+            coreGlow.addColorStop(0.7, `rgba(${Math.floor(p.color.r * 255 * 1.5)}, ${Math.floor(p.color.g * 255 * 1.5)}, ${Math.floor(p.color.b * 255 * 1.5)}, ${opacity * 0.5})`);
+            coreGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            
+            ctx.beginPath();
+            ctx.fillStyle = coreGlow;
+            ctx.arc(x, y, coreSize, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw dramatic trails
+            if (p.prevX !== undefined && p.prevY !== undefined && config.PARTICLE_TRAIL_LENGTH > 0) {
+                const prevX = p.prevX * canvas.width;
+                const prevY = (1 - p.prevY) * canvas.height;
+                
+                // Calculate speed for trail intensity
+                const dx = x - prevX;
+                const dy = y - prevY;
+                const speed = Math.sqrt(dx * dx + dy * dy);
+                
+                // Draw trails for all particles, but scale by speed
+                const trailWidth = p.size * 5.0 * config.PARTICLE_TRAIL_LENGTH * Math.min(1.0, speed * 0.2);
+                
+                // Extremely bright trail with white core
+                const gradient = ctx.createLinearGradient(prevX, prevY, x, y);
+                gradient.addColorStop(0, `rgba(${Math.floor(p.color.r * 255 * 0.5)}, ${Math.floor(p.color.g * 255 * 0.5)}, ${Math.floor(p.color.b * 255 * 0.5)}, 0)`);
+                gradient.addColorStop(0.4, `rgba(${Math.floor(p.color.r * 255 * 1.5)}, ${Math.floor(p.color.g * 255 * 1.5)}, ${Math.floor(p.color.b * 255 * 1.5)}, ${opacity * 0.4 * config.PARTICLE_TRAIL_LENGTH})`);
+                gradient.addColorStop(1, `rgba(255, 255, 255, ${opacity * 1.2 * config.PARTICLE_TRAIL_LENGTH})`);
+                
+                ctx.beginPath();
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = trailWidth;
+                ctx.lineCap = 'round';
+                ctx.moveTo(prevX, prevY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
+            
+            // Draw an intense white inner core (absolutely unmissable)
+            const innerCoreSize = p.size * 1.5 * pulseIntensity;
+            ctx.beginPath();
+            ctx.fillStyle = 'rgba(255, 255, 255, ' + Math.min(1.0, opacity * 1.8) + ')';
+            ctx.arc(x, y, innerCoreSize, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Store current position as previous for next frame
+            p.prevX = p.x;
+            p.prevY = p.y;
+        });
+        
+        // Reset composite operation
+        ctx.globalCompositeOperation = 'source-over';
+        
+        // Now draw the particle canvas on top of the WebGL canvas with a stronger blend mode
+        const mainCtx = canvas.getContext('2d', { alpha: true });
+        if (mainCtx) {
+            mainCtx.save();
+            mainCtx.globalCompositeOperation = 'lighter';
+            mainCtx.drawImage(particleCanvas, 0, 0);
+            mainCtx.restore();
+        }
+    } catch (e) {
+        // If there's an error with the canvas 2D context, log it but don't let it break the simulation
+        console.error('Error in drawParticles:', e);
+    }
+}
 
